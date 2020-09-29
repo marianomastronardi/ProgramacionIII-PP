@@ -147,6 +147,7 @@ switch ($method) {
                     if (strlen($token) > 0) {
                         if (iToken::decodeUserToken($token)) {
                            Autos::getAutoPatente('autos.json', $param);
+                        break;
                         }
                     } else {
                         echo json_encode(array('message' => 'Usuario no autenticado'));

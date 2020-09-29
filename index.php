@@ -2,6 +2,7 @@
 
 require_once './usuario.php';
 require_once './token.php';
+require_once './autos.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 if (isset($_SERVER['PATH_INFO'])) {
@@ -14,7 +15,7 @@ $token = $_SERVER['HTTP_TOKEN'] ?? '';
 switch ($method) {
     case 'POST';
         switch ($path) {
-            case 'usuario':
+            case 'registro':
 
                 if (isset($param)) {
                     if (strlen($token) > 0) {
@@ -29,10 +30,11 @@ switch ($method) {
                     }
                 } else {
                     $email = $_POST['email'] ?? '';
-                    $clave = $_POST['clave'] ?? '';
+                    $tipo = $_POST['tipo'] ?? '';
+                    $clave = $_POST['password'] ?? '';
                     $foto = $_FILES ?? false;
-                    if (strlen($email) > 0 && strlen($clave) > 0/* && isset($_FILES)*/) {
-                        $usuario = new Usuario($email, $clave, $foto);
+                    if (strlen($email) > 0 && strlen($tipo) > 0  && strlen($clave) > 0/* && isset($_FILES)*/) {
+                        $usuario = new Usuario($email, $tipo, $clave, $foto);
 
                         $usuario->SaveUsuarioAsJSON('users.json');
                     }
@@ -42,61 +44,68 @@ switch ($method) {
                 break;
             case 'login':
                 $email = $_POST['email'] ?? '';
-                $clave = $_POST['clave'] ?? '';
+                $clave = $_POST['password'] ?? '';
                 if (strlen($email) > 0 && strlen($clave) > 0) {
                     echo Usuario::LogIn('users.json', $email, $clave);
                 }
                 break;
-                /*  case 'materia':
+            case 'ingreso':
 
-                $nombre = $_POST['nombre'] ?? '';
-                $cuatrimestre = $_POST['cuatrimestre'] ?? '';
-               
+                $patente = $_POST['patente'] ?? '';
+                $fecha = new DateTime();
+
                 if (strlen($token) > 0) {
                      if (iToken::decodeUserToken($token)) {
-                        if (strlen($nombre) > 0 && strlen($cuatrimestre) > 0) {
-                            $materia = new Materia($nombre, $cuatrimestre);
-                            $materia->SaveMateriaAsJSON('materias.json');
+                        if (strlen($patente) > 0) {
+                           $email =  Usuario::getEmail($token);
+                           switch(Usuario::esAdmin('users.json', $email))
+                           {
+                               case 'admin':
+                                echo json_encode(array('message' => 'Solo se permiten users'));
+                               break;
+                               case 'user' :
+                            $auto = new Autos($patente, $fecha->format('Y-m-d H:i:s'), $email);
+                            $auto->SaveAutoAsJSON('autos.json');
+                               break;
+                               default:
+                               echo json_encode(array('message' => 'No existe el usuario'));
+                            break;
+                           }
+             
                         }
                     }
                 }
 
                 break;
-            case 'profesor':
-                $nombre = $_POST['nombre'] ?? '';
-                $legajo = $_POST['legajo'] ?? '';
-               
-                if (strlen($token) > 0) {
-                    if (iToken::decodeUserToken($token)) {
-                        if (strlen($nombre) > 0 && strlen($legajo) > 0) {
-                            $profesor = new Profesor($nombre, $legajo);
-
-                            if ($profesor->ValidarLegajoAsJSON('profesores.json', $profesor->_legajo)) {
-                                $profesor->SaveUsuarioAsJSON('profesores.json');
+          
+            case 'users':
+                
+                if (isset($param)) {
+                    if (strlen($token) > 0) {
+                        if (iToken::decodeUserToken($token)) {
+                            $foto = $_FILES;
+                            if (isset($_FILES)) {
+                                Usuario::changePhoto('users.json', $param, $foto);
                             }
                         }
+                    } else {
+                        echo json_encode(array('message' => 'Usuario no autenticado'));
+                    }
+                } else {
+                    $email = $_POST['email'] ?? '';
+                    $tipo = $_POST['tipo'] ?? '';
+                    $clave = $_POST['password'] ?? '';
+                    $foto = $_FILES ?? false;
+                    if (strlen($email) > 0 && strlen($tipo) > 0  && strlen($clave) > 0/* && isset($_FILES)*/) {
+                        $usuario = new Usuario($email, $tipo, $clave, $foto);
+
+                        $usuario->SaveUsuarioAsJSON('users.json');
                     }
                 }
 
-                break;
-
-            case 'asignacion':
-                $legajo = $_POST['legajo'] ?? '';
-                $id = $_POST['id'] ?? '';
-                $turno = $_POST['turno'] ?? '';
-                
-                if (strlen($token) > 0) {
-                    if (iToken::decodeUserToken($token)) {
-                        if (strlen($legajo) > 0 && strlen($id) > 0 && strlen($turno) > 0) {
-                            $asignacionMateria = new AsignacionMateria($legajo, $id, $turno);
-
-                            $asignacionMateria->saveAsignacionMateriaJSON('materias-profesores.json');
-                        }
-                    }
-                }
 
                 break;
-*/
+            break;
             default:
                 echo "Path incorecto";
                 break;
@@ -105,62 +114,59 @@ switch ($method) {
 
     case 'GET':
         switch ($path) {
-                /*     case 'materia':
+                case 'retiro':
 
-               $ruta = 'materias.json';
-               $lista = FileHandler::getJson($ruta);
-               
-               if (!$lista) $lista = array();
-
-                if (strlen($token) > 0) {
-                    if (iToken::decodeUserToken($token)) {
-                        echo json_encode($lista);
-                  }
-                }
-                break;
-
-            case 'profesor':
-                $ruta = 'profesores.json';
-
-                $lista = FileHandler::getJson($ruta);
-
-                if (!$lista) $lista = array();
-
-                if (strlen($token) > 0) {
-                    if (iToken::decodeUserToken($token)) {
-                        echo json_encode($lista);
-                    }
-                }
-                break;
-
-            case 'asignacion':
-                $ruta = 'materias-profesores.json';
-                $lista = FileHandler::getJson($ruta);
-
-                if (!$lista) $lista = array();
-
-                if (strlen($token) > 0) {
-                    if (iToken::decodeUserToken($token)) {
-                        echo json_encode($lista);
-                    }
-                }
-                break;
-                */
-                case 'usuario':
-                    $ruta = 'users.json';
-                    $lista = Archivo::getJson($ruta);
-    
-                    if (!$lista) $lista = array();
-    
-                    if (strlen($token) > 0) {
-                        //var_dump(iToken::decodeUserToken($token));
-                        if (iToken::decodeUserToken($token)) {
-                            echo json_encode($lista);
+                    if (isset($param)) {
+                        if (strlen($token) > 0) {
+                            if (iToken::decodeUserToken($token)) {
+                                $email =  Usuario::getEmail($token);
+                                switch(Usuario::esAdmin('users.json', $email))
+                                {
+                                    case 'admin':
+                                     echo json_encode(array('message' => 'Solo se permiten users'));
+                                    break;
+                                    case 'user' :
+                                        $fecha = new DateTime();
+                                          Autos::SalidaAuto('autos.json', $param, $fecha);
+                                    break;
+                                    default:
+                                    echo json_encode(array('message' => 'No existe el usuario'));
+                                 break;
+                                }
+                            }
+                        } else {
+                            echo json_encode(array('message' => 'Usuario no autenticado'));
                         }
-                    }else {
+                    }
+                break;
+
+            case 'ingreso':
+
+                $param = $_GET['patente']??'';
+                if (isset($param) && strlen($param) > 0) {
+                    if (strlen($token) > 0) {
+                        if (iToken::decodeUserToken($token)) {
+                           Autos::getAutoPatente('autos.json', $param);
+                        }
+                    } else {
                         echo json_encode(array('message' => 'Usuario no autenticado'));
                     }
-                    break; 
+                } else {
+
+                    if (strlen($token) > 0) {
+                        if (iToken::decodeUserToken($token)) {
+                            $ruta = 'autos.json';
+
+                            Autos::getAutos($ruta);
+                            break;
+                    } else {
+                        echo json_encode(array('message' => 'Usuario no autenticado'));
+                    }
+                    
+                }
+            }
+
+          
             default:
                 echo "Path incorecto";
                 break;

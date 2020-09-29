@@ -7,13 +7,15 @@ class Usuario
 {
 
     public $_email;
-    public $_clave;
+    public $_tipoUsuario;
+    public $_password;
     public $_foto;
 
-    function __construct($email, $clave, $foto)
+    function __construct($email, $tipoUsuario, $clave, $foto)
     {
         $this->_email = $email;
-        $this->_clave = $clave;
+        $this->_tipoUsuario = $tipoUsuario;
+        $this->_password = $clave;
         $this->_foto = $foto;
     }
 
@@ -34,7 +36,7 @@ class Usuario
     function SaveUsuarioAsJSON($ruta)
     { 
         if (!$this->getUser($ruta, $this->_email)){
-            $this->_clave = password_hash($this->_clave, PASSWORD_BCRYPT);
+            $this->_password = password_hash($this->_password, PASSWORD_BCRYPT);
             $this->_foto =  $this->_foto ? Usuario::createPhoto($this->_email, $this->_foto) : "";
             Archivo::SaveJson($ruta, $this);
         } 
@@ -67,7 +69,7 @@ class Usuario
              echo json_encode(array('message'=> "El Usuario no existe"));
          }else{
             //if($user->_clave != $this->_clave){
-            if(!password_verify($clave, $user->_clave)){
+            if(!password_verify($clave, $user->_password)){
                 echo json_encode(array('message'=> "Contraseña incorrecta")); 
             }else{
                 return Usuario::getToken($email, $clave);
@@ -91,5 +93,17 @@ class Usuario
     static function createPhoto($email, $foto){
         $photoAddress = Archivo::imageHandler($email, $foto);
         return $photoAddress ? $photoAddress : "";
+    }
+
+    static function esAdmin($ruta, $email){
+        $user = Usuario::getUser($ruta, $email);
+        if($user){
+            return $user->_tipoUsuario;
+        }
+        return '';
+    }
+
+    static function getEmail($token){
+        return iToken::decodeUserToken($token)['email'];
     }
 }
